@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body { background: #222; color: #fff; text-align: center; }
+        .container { display: flex; justify-content: center; align-items: flex-start; }
+        .scoreboard {
+            background: #333;
+            padding: 16px;
+            margin-right: 20px;
+            border-radius: 8px;
+            min-width: 120px;
+            text-align: left;
+        }
+        canvas { background: #111; margin-top: 30px; }
+        #restart-btn {
+            margin-top: 20px;
+            padding: 8px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            background: #0f0;
+            color: #111;
+            cursor: pointer;
+        }
+        #game-message {
+            position: absolute;
+            left: 50%;
+            top: 140px;
+            transform: translateX(-50%);
+            font-size: 2em;
+            color: #0f0;
+            background: rgba(34,34,34,0.85);
+            padding: 12px 30px;
+            border-radius: 12px;
+            z-index: 2;
+            pointer-events: none;
+            user-select: none;
+        }
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Game</h1>
+    <p style="margin-top:-10px; color:#0f0; font-size:18px;">방향키(↑↓←→)로 조작하세요. 먹이를 먹으며 점수를 올리세요!</p>
+    <div class="container">
+        <div class="scoreboard">
+            <h3>Scoreboard</h3>
+            <ul id="score-list"></ul>
+        </div>
+        <div>
+            <div class="canvas-wrapper">
+                <canvas id="game" width="400" height="400"></canvas>
+                <div id="game-message"></div>
+            </div>
+            <div>
+                <button id="restart-btn">Restart</button>
+            </div>
+            <p>Use arrow keys to play!</p>
+        </div>
+    </div>
+    <script src="snake.js"></script>
+</body>
+</html>
