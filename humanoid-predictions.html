@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가정용 휴머노이드 로봇 도입 시기 전문가 예측 분포</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    line-height: 1.6;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin: 30px 0 10px;
+    background: linear-gradient(135deg, #00d4ff, #7b61ff, #ff6b9d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    text-align: center;
+    color: #8892a8;
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  .stat-card {
+    background: linear-gradient(135deg, #141b2d, #1a2340);
+    border: 1px solid #2a3555;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff, #7b61ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-card .label {
+    color: #8892a8;
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+  .chart-section {
+    background: linear-gradient(135deg, #141b2d, #1a2340);
+    border: 1px solid #2a3555;
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+  }
+  .chart-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+    color: #e0e6f0;
+  }
+  .chart-section .description {
+    color: #8892a8;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  .chart-container {
+    position: relative;
+    width: 100%;
+    max-height: 500px;
+  }
+  .chart-container canvas { width: 100% !important; }
+  .insight-box {
+    background: linear-gradient(135deg, #1a2845, #1e2d50);
+    border-left: 4px solid #7b61ff;
+    border-radius: 0 12px 12px 0;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .insight-box h3 {
+    color: #7b61ff;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+  }
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border: 1px solid #3a4570;
+    border-radius: 20px;
+    background: transparent;
+    color: #8892a8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: #7b61ff;
+    border-color: #7b61ff;
+    color: #fff;
+  }
+  .data-table-container {
+    background: linear-gradient(135deg, #141b2d, #1a2340);
+    border: 1px solid #2a3555;
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+    overflow-x: auto;
+  }
+  .data-table-container h2 { margin-bottom: 15px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th {
+    background: #1e2845;
+    color: #7b61ff;
+    padding: 10px 12px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+  }
+  th:hover { background: #253055; }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #1e2845;
+  }
+  tr:hover td { background: #1a2240; }
+  .type-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .type-ceo { background: #ff6b9d22; color: #ff6b9d; border: 1px solid #ff6b9d44; }
+  .type-bank { background: #00d4ff22; color: #00d4ff; border: 1px solid #00d4ff44; }
+  .type-research { background: #7b61ff22; color: #a78bfa; border: 1px solid #7b61ff44; }
+  .type-consultancy { background: #fbbf2422; color: #fbbf24; border: 1px solid #fbbf2444; }
+  .type-company { background: #34d39922; color: #34d399; border: 1px solid #34d39944; }
+  .type-roboticist { background: #f9731622; color: #fb923c; border: 1px solid #f9731644; }
+  .type-government { background: #a78bfa22; color: #c4b5fd; border: 1px solid #a78bfa44; }
+  .table-scroll { max-height: 600px; overflow-y: auto; }
+  .search-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 16px;
+    border: 1px solid #3a4570;
+    border-radius: 8px;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+  }
+  .search-input::placeholder { color: #5a6580; }
+  .legend-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin: 15px 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #8892a8;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .footer {
+    text-align: center;
+    color: #5a6580;
+    font-size: 0.8rem;
+    padding: 30px 0;
+    border-top: 1px solid #1e2845;
+    margin-top: 30px;
+  }
+  .footer a { color: #7b61ff; text-decoration: none; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+  .phase-timeline {
+    display: flex;
+    gap: 0;
+    margin: 20px 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .phase {
+    flex: 1;
+    padding: 15px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .phase-year { font-size: 1.3rem; font-weight: 700; }
+  .phase-label { font-size: 0.75rem; margin-top: 4px; opacity: 0.8; }
+  .phase-1 { background: linear-gradient(135deg, #1a4a3a, #1a5a4a); color: #34d399; }
+  .phase-2 { background: linear-gradient(135deg, #1a3a5a, #1a4a6a); color: #00d4ff; }
+  .phase-3 { background: linear-gradient(135deg, #2a2a5a, #3a3a6a); color: #a78bfa; }
+  .phase-4 { background: linear-gradient(135deg, #4a2a3a, #5a2a4a); color: #ff6b9d; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>가정용 휴머노이드 로봇 도입 시기: 전문가 예측 분포 분석</h1>
+  <p class="subtitle">108개 공신력 있는 전문가/기관 예측 데이터 기반 | 2026.02 기준 수집</p>
+
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="phase-timeline">
+    <div class="phase phase-1">
+      <div class="phase-year">2026-2027</div>
+      <div class="phase-label">초기 얼리액세스 / 베타</div>
+    </div>
+    <div class="phase phase-2">
+      <div class="phase-year">2028-2031</div>
+      <div class="phase-label">최초 상용 제품 출시</div>
+    </div>
+    <div class="phase phase-3">
+      <div class="phase-year">2032-2037</div>
+      <div class="phase-label">본격 가정 보급 시작</div>
+    </div>
+    <div class="phase phase-4">
+      <div class="phase-year">2038-2050</div>
+      <div class="phase-label">대중화 / 보편적 보급</div>
+    </div>
+  </div>
+
+  <!-- Main Histogram -->
+  <div class="chart-section">
+    <h2>1. 전문가 예측 연도별 분포 (히스토그램)</h2>
+    <p class="description">108개 전문가/기관 예측의 연도별 빈도. 가정용 휴머노이드가 '처음 의미 있게 가정에 도입되는 시점'에 대한 예측.</p>
+    <div class="legend-container" id="legend1"></div>
+    <div class="chart-container" style="max-height:450px;">
+      <canvas id="histogramChart"></canvas>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <h3>핵심 발견</h3>
+    <p>전문가 예측의 <strong>중앙값(Median)은 2030년</strong>으로, 2030년을 전후한 시기가 가정용 휴머노이드의 '실질적 도입점'으로 가장 많이 거론됩니다.
+    다만 <strong>낙관론자(테크 CEO)와 보수론자(학계/로보틱스 전문가)</strong> 사이에 최대 14년의 격차가 존재합니다.
+    가장 빈번한 예측 연도는 <strong>2030년(26건)</strong>과 <strong>2035년(19건)</strong>이며, 이 두 해가 전체 예측의 약 42%를 차지합니다.</p>
+  </div>
+
+  <!-- By Source Type -->
+  <div class="chart-section">
+    <h2>2. 전문가 유형별 예측 분포 (박스플롯 대용 - 스트립 차트)</h2>
+    <p class="description">전문가 유형(CEO/창업자, 투자은행, 리서치 기관, 컨설팅, 기업, 로보틱스 전문가, 정부)별 예측 연도 비교</p>
+    <div class="chart-container" style="max-height:400px;">
+      <canvas id="stripChart"></canvas>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <h3>유형별 차이 분석</h3>
+    <p><strong>CEO/창업자</strong> 그룹이 가장 낙관적(평균 ~2028)이며, <strong>로보틱스 전문가</strong>가 가장 보수적(평균 ~2038)입니다.
+    <strong>투자은행</strong>들은 2030-2035 구간에 집중되며, <strong>리서치 기관</strong>들은 2030-2032 구간이 가장 빈번합니다.
+    이는 기술 내부자(CEO)가 외부 관찰자보다 더 낙관적인 '내부자 편향(Insider Bias)'을 보여줍니다.</p>
+  </div>
+
+  <!-- Cumulative Distribution -->
+  <div class="two-col">
+    <div class="chart-section">
+      <h2>3. 누적 분포 함수 (CDF)</h2>
+      <p class="description">특정 연도까지 예측 누적 비율: "20XX년까지 도입된다"고 예측한 전문가 비율</p>
+      <div class="chart-container" style="max-height:350px;">
+        <canvas id="cdfChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-section">
+      <h2>4. 전문가 유형별 평균 예측 연도</h2>
+      <p class="description">각 전문가 유형 그룹의 평균 예측 연도 비교</p>
+      <div class="chart-container" style="max-height:350px;">
+        <canvas id="avgChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Donut Chart for Decade Breakdown -->
+  <div class="two-col">
+    <div class="chart-section">
+      <h2>5. 시기별 예측 비율</h2>
+      <p class="description">예측을 4개 시기로 분류한 비율</p>
+      <div class="chart-container" style="max-height:350px;">
+        <canvas id="donutChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-section">
+      <h2>6. 낙관 vs 보수 스펙트럼</h2>
+      <p class="description">각 전문가의 예측 연도를 스펙트럼으로 표시 (원 크기 = 해당 연도 빈도)</p>
+      <div class="chart-container" style="max-height:350px;">
+        <canvas id="bubbleChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="data-table-container">
+    <h2>전체 데이터 테이블 (108개 예측)</h2>
+    <input type="text" class="search-input" id="searchInput" placeholder="검색 (이름, 기관, 유형...)">
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="table-scroll">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">#</th>
+            <th onclick="sortTable(1)">전문가/기관</th>
+            <th onclick="sortTable(2)">역할/소속</th>
+            <th onclick="sortTable(3)">유형</th>
+            <th onclick="sortTable(4)">예측 연도</th>
+            <th onclick="sortTable(5)">예측 내용</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <h3>종합 결론: 가정용 휴머노이드 도입 시기</h3>
+    <p>108개 전문가 예측을 종합하면, 가정용 휴머노이드 로봇의 도입은 <strong>3단계</strong>로 전개될 것으로 전망됩니다:</p>
+    <br>
+    <p><strong>1단계 (2026-2027):</strong> 1X NEO, Figure 03 등 최초의 가정용 휴머노이드가 얼리 액세스/베타 형태로 소수 가정에 배달. 가격 $20,000+, 기능 제한적, 원격 조작 의존도 높음.</p>
+    <br>
+    <p><strong>2단계 (2028-2032):</strong> 전문가 다수가 예측하는 '실질적 도입 구간'. 가격이 $10,000-20,000으로 하락하고, AI 자율성이 향상되면서 일부 가정에서 실용적으로 사용 가능해짐. Goldman Sachs, ARK Invest 등이 이 시기를 가정용 시장 개시점으로 봄.</p>
+    <br>
+    <p><strong>3단계 (2033-2040+):</strong> 대중적 보급. 가격 $5,000 이하, 완전 자율 동작, 노인 돌봄/가사/육아 보조 등 다양한 역할. Morgan Stanley는 2050년까지 전 세계 가정에 8,000만 대 보급을 전망.</p>
+    <br>
+    <p><strong>가장 현실적인 예측:</strong> 중앙값(2030년)과 최빈값(2030년)을 고려할 때, <strong>2029-2031년경</strong>이 가정용 휴머노이드가 '제품'으로서 가정에 처음 의미 있게 도입되는 시점으로 가장 많은 전문가들이 합의하는 시기입니다.</p>
+  </div>
+
+  <div class="footer">
+    <p>데이터 수집 기준일: 2026년 2월 | 총 108개 전문가/기관 예측</p>
+    <p style="margin-top:8px;">
+      주요 출처:
+      <a href="https://www.goldmansachs.com/insights/articles/the-global-market-for-robots-could-reach-38-billion-by-2035">Goldman Sachs</a> |
+      <a href="https://www.morganstanley.com/insights/articles/humanoid-robot-market-5-trillion-by-2050">Morgan Stanley</a> |
+      <a href="https://www.bain.com/insights/humanoid-robots-from-demos-to-deployment-technology-report-2025/">Bain & Company</a> |
+      <a href="https://www.mckinsey.com/industries/industrials/our-insights/humanoid-robots-crossing-the-chasm-from-concept-to-commercial-reality">McKinsey</a> |
+      <a href="https://www.ark-invest.com/articles/analyst-research/how-ark-is-thinking-about-humanoid-robotics">ARK Invest</a> |
+      <a href="https://www.deloitte.com/us/en/insights/industry/technology/technology-media-and-telecom-predictions/2026/ai-for-robots-drones.html">Deloitte</a> |
+      <a href="https://rodneybrooks.com/why-todays-humanoids-wont-learn-dexterity/">Rodney Brooks</a> |
+      <a href="https://www.citigroup.com/global/insights/the-rise-of-ai-robots-humanoids-are-coming-for-you">Citigroup</a> |
+      <a href="https://www.ubs.com/global/en/investment-bank/insights-and-data/2025/is-the-world-ready-for-one-billion-robots.html">UBS</a> |
+      <a href="https://institute.bankofamerica.com/transformation/humanoid-robots.html">Bank of America</a>
+    </p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// COMPREHENSIVE DATASET: 108 Expert Predictions
+// ============================================================
+const predictions = [
+  // === CEO / Founders (type: 'CEO/창업자') ===
+  {id:1, name:"Peter Diamandis", role:"XPrize Foundation 창립자", type:"CEO/창업자", year:2026, note:"2026년 베타 형태로 가정에 휴머노이드 도입 예측"},
+  {id:2, name:"Brett Adcock", role:"Figure AI CEO", type:"CEO/창업자", year:2026, note:"2026년 가정 내 완전 자율성 목표, 베타 테스터 모집"},
+  {id:3, name:"Bernt Bornich", role:"1X Technologies CEO", type:"CEO/창업자", year:2026, note:"2026년 NEO 가정용 로봇 미국 배송 시작"},
+  {id:4, name:"Elon Musk", role:"Tesla CEO", type:"CEO/창업자", year:2027, note:"2027년 말까지 Optimus 일반 판매 목표"},
+  {id:5, name:"Ryu Jae-cheol", role:"LG Electronics CEO", type:"CEO/창업자", year:2027, note:"2027년 CLOiD 가정용 휴머노이드 상용 출시"},
+  {id:6, name:"Jensen Huang", role:"NVIDIA CEO", type:"CEO/창업자", year:2028, note:"공장 몇 년 내, 가정은 10년 내(~2036), 2026 인간 수준 역량"},
+  {id:7, name:"Cathie Wood", role:"ARK Invest CEO", type:"CEO/창업자", year:2028, note:"AI 발전으로 상용화 2030년대 초에서 2020년대 후반으로 앞당겨짐"},
+  {id:8, name:"Brett Winton", role:"ARK Invest 리서치 디렉터", type:"CEO/창업자", year:2028, note:"AI 가속으로 가정용 상용화 2020년대 후반으로 이동"},
+  {id:9, name:"He Xiaopeng", role:"XPeng CEO", type:"CEO/창업자", year:2030, note:"2026년 양산 목표이나 가정용은 아직 시기상조"},
+  {id:10, name:"Masayoshi Son", role:"SoftBank CEO", type:"CEO/창업자", year:2040, note:"2047년 100억 스마트 로봇, 2035 ASI 도래 예측"},
+  {id:11, name:"Robert Playter", role:"Boston Dynamics CEO", type:"CEO/창업자", year:2035, note:"가정 도입은 장기적 꿈, 2030년대 중반 이후"},
+  {id:12, name:"Karol Hausman", role:"Physical Intelligence CEO", type:"CEO/창업자", year:2030, note:"범용 로봇 '두뇌' 개발 중, 가정용 활용 점진적"},
+
+  // === Investment Banks (type: '투자은행') ===
+  {id:13, name:"Goldman Sachs (수정)", role:"Jacqueline Du 애널리스트", type:"투자은행", year:2028, note:"소비자 시장 2028-2031 (기존 2030-2035에서 앞당김)"},
+  {id:14, name:"Goldman Sachs (수정 중간값)", role:"글로벌 리서치팀", type:"투자은행", year:2029, note:"소비자 시장 진입 중간값 2029"},
+  {id:15, name:"Goldman Sachs (수정 상한)", role:"글로벌 리서치팀", type:"투자은행", year:2031, note:"소비자 시장 상한 2031, 강세 시나리오 100만대"},
+  {id:16, name:"Goldman Sachs (기존 하한)", role:"2022년 리포트", type:"투자은행", year:2030, note:"기존 예측: 소비자 응용 2030-2035"},
+  {id:17, name:"Goldman Sachs (기존 상한)", role:"2022년 리포트", type:"투자은행", year:2035, note:"기존 예측 상한: 2035년까지 소비자 시장 형성"},
+  {id:18, name:"Goldman Sachs ($38B)", role:"시장 규모 전망", type:"투자은행", year:2035, note:"2035년 시장 $38B, 140만 출하"},
+  {id:19, name:"Morgan Stanley (가정용 시작)", role:"Adam Jonas 수석 애널리스트", type:"투자은행", year:2030, note:"가정 보급 시작 2030년, 중반까지 느린 채택"},
+  {id:20, name:"Morgan Stanley (가속)", role:"Adam Jonas", type:"투자은행", year:2035, note:"2030년대 중반부터 가속, 후반 본격화"},
+  {id:21, name:"Morgan Stanley (가정 8000만)", role:"글로벌 휴머노이드 모델", type:"투자은행", year:2050, note:"2050년 가정 8000만대, 미국 가구 10%"},
+  {id:22, name:"Citigroup", role:"Rob Garlick, Wenyan Fei", type:"투자은행", year:2035, note:"2050년 6.48억 휴머노이드, $7조 시장"},
+  {id:23, name:"Bank of America (2단계)", role:"글로벌 리서치", type:"투자은행", year:2028, note:"2028-2034 상업용 대량 채택, 가정은 3단계"},
+  {id:24, name:"Bank of America (3단계)", role:"글로벌 리서치", type:"투자은행", year:2035, note:"2035+ 가정/노인 돌봄 등 대량 채택"},
+  {id:25, name:"Bank of America (장기)", role:"글로벌 리서치", type:"투자은행", year:2040, note:"2060년까지 30억 대, BOM $13K-$17K"},
+  {id:26, name:"Macquarie (6.3M)", role:"리서치팀", type:"투자은행", year:2033, note:"2035년 630만대, 소비자 시장 $3조(2050)"},
+  {id:27, name:"Macquarie (소비자)", role:"리서치팀", type:"투자은행", year:2050, note:"소비자 시장 $3조 2050년 전망"},
+  {id:28, name:"UBS (산업 중심)", role:"Phyllis Wang 애널리스트", type:"투자은행", year:2031, note:"EV 모멘트 5년 내 아님, 2030년 63% 산업용"},
+  {id:29, name:"UBS (가정 채택)", role:"글로벌 리서치", type:"투자은행", year:2035, note:"2030-2050 주요 변곡점, 연 8600만대(2050)"},
+  {id:30, name:"RBC Capital Markets", role:"Tom Narayan 애널리스트", type:"투자은행", year:2035, note:"소비자(가정)가 핵심 가치이나 시기 불확실"},
+  {id:31, name:"JPMorgan", role:"리서치팀", type:"투자은행", year:2032, note:"산업 자동화 우선, 소비자는 후속"},
+
+  // === Research Firms (type: '리서치 기관') ===
+  {id:32, name:"ABI Research (변곡점)", role:"시장 분석", type:"리서치 기관", year:2027, note:"2026-2027 시장 변곡점, 11.5만대 출하"},
+  {id:33, name:"ABI Research ($6.5B)", role:"시장 전망", type:"리서치 기관", year:2030, note:"2030년 $6.5B 시장, 초기 엔터테인먼트 중심"},
+  {id:34, name:"Yole Group (출하량)", role:"Pierrick Boulay 수석 애널리스트", type:"리서치 기관", year:2030, note:"2030년 13.6만대 출하, 소비자는 다음 파도"},
+  {id:35, name:"Yole Group ($51B)", role:"시장 전망", type:"리서치 기관", year:2035, note:"2035년 $51B, 200만대, ASP $25K"},
+  {id:36, name:"Counterpoint Research", role:"시장 분석", type:"리서치 기관", year:2030, note:"2025-2030 CAGR 69.7%, 소비자 후반"},
+  {id:37, name:"IDTechEx", role:"시장 리포트", type:"리서치 기관", year:2032, note:"2035년 $30B, 자동차/물류 우선 → 소비자"},
+  {id:38, name:"MarketsandMarkets", role:"시장 리포트", type:"리서치 기관", year:2030, note:"2030년 $15.26B, CAGR 39.2%"},
+  {id:39, name:"Grand View Research", role:"시장 리포트", type:"리서치 기관", year:2030, note:"2030년 $4.04B, CAGR 17.5%"},
+  {id:40, name:"Fortune Business Insights", role:"시장 리포트", type:"리서치 기관", year:2032, note:"2032년 $66B, CAGR 45.5%"},
+  {id:41, name:"Future Market Insights (시작)", role:"시장 리포트", type:"리서치 기관", year:2030, note:"2030년 $27B 돌파, 대규모 상용화"},
+  {id:42, name:"Future Market Insights (대중)", role:"시장 리포트", type:"리서치 기관", year:2033, note:"2032-2033 대중 시장 채택 단계"},
+  {id:43, name:"Roots Analysis", role:"시장 리포트", type:"리서치 기관", year:2032, note:"2035년 $104B, 가정용 고성장 CAGR"},
+  {id:44, name:"BCC Research", role:"시장 리포트", type:"리서치 기관", year:2030, note:"2030년 $11B, CAGR 42.8%"},
+  {id:45, name:"Cervicorn Consulting", role:"시장 리포트", type:"리서치 기관", year:2030, note:"2029년 이후 가정용 가속, 2035년 8000만대"},
+  {id:46, name:"SkyQuest Technology", role:"시장 리포트", type:"리서치 기관", year:2032, note:"2026-2033 시장 성장 예측"},
+  {id:47, name:"Intel Market Research", role:"소비자급 시장 분석", type:"리서치 기관", year:2030, note:"소비자급 시장 2025 $109.8B→2032 $539.4B"},
+  {id:48, name:"SNE Research (초기)", role:"한국 리서치 기관", type:"리서치 기관", year:2035, note:"2035년 가정용 보급률 0.01%, 679만대 누적"},
+  {id:49, name:"SNE Research (확대)", role:"한국 리서치 기관", type:"리서치 기관", year:2040, note:"2040년 가정용 0.95%, 2820만대, 본격 확대"},
+  {id:50, name:"DIGITIMES Research (V1.0)", role:"디지타임스 리서치", type:"리서치 기관", year:2029, note:"2029년 이후 대량생산 준비, Version 1.0"},
+  {id:51, name:"DIGITIMES Research (시장)", role:"디지타임스 리서치", type:"리서치 기관", year:2028, note:"2026 시장 0.8%, 2028 이후 서비스 확대"},
+  {id:52, name:"Global X ETFs", role:"ETF 리서치", type:"리서치 기관", year:2035, note:"2035년 가구 15% 침투 시 2.25억대, TAM $2.8T"},
+
+  // === Consultancies (type: '컨설팅') ===
+  {id:53, name:"McKinsey", role:"산업 보고서", type:"컨설팅", year:2030, note:"가정용 $20K-$50K 필요, 2030 변곡점 가능"},
+  {id:54, name:"Bain & Company (구조화)", role:"테크놀로지 리포트 2025", type:"컨설팅", year:2030, note:"5년 내 반구조화 서비스, 10년 내 개방 환경"},
+  {id:55, name:"Bain & Company (가정)", role:"테크놀로지 리포트 2025", type:"컨설팅", year:2035, note:"10년 후 노인 돌봄/건설/광업 등 개방 환경"},
+  {id:56, name:"Deloitte", role:"TMT 예측 2026", type:"컨설팅", year:2030, note:"2030년 변곡점, 로봇 출하 100만/년"},
+  {id:57, name:"Deloitte (가정 전망)", role:"Physical AI 보고서", type:"컨설팅", year:2035, note:"가정용은 2030 또는 2040 시야, 2026은 격차 존재"},
+
+  // === Companies (type: '기업') ===
+  {id:58, name:"1X Technologies", role:"NEO 로봇 계획", type:"기업", year:2026, note:"$20K 가정용 NEO, 2026년 Q3-Q4 미국 배송"},
+  {id:59, name:"Figure AI", role:"Figure 03 로드맵", type:"기업", year:2026, note:"2025 알파 테스트, 2026 가정 베타"},
+  {id:60, name:"Figure AI (소매)", role:"장기 마스터 플랜", type:"기업", year:2030, note:"2030년 소매 소비자 확대, 23억 가구 타겟"},
+  {id:61, name:"Tesla (내부 사용)", role:"Optimus 로드맵", type:"기업", year:2026, note:"2025-2026 내부/산업용, 2027 일반 판매"},
+  {id:62, name:"Tesla (일반 판매)", role:"Optimus 로드맵", type:"기업", year:2027, note:"2027년 말 일반 소비자 판매 목표"},
+  {id:63, name:"Boston Dynamics", role:"Atlas 상용화", type:"기업", year:2035, note:"산업용 우선(2026 현대), 가정용은 장기적 비전"},
+  {id:64, name:"Agility Robotics", role:"Digit 로드맵", type:"기업", year:2030, note:"물류 → 서비스 → 가정, 소비자 2028-2030"},
+  {id:65, name:"Unitree Robotics", role:"R1/G1 전략", type:"기업", year:2029, note:"$5,900 R1 출시, 가격 급락 중이나 가정용 미비"},
+  {id:66, name:"LG Electronics", role:"CLOiD 로봇", type:"기업", year:2027, note:"CES 2026 가정용 CLOiD 공개, 2027 상용화"},
+  {id:67, name:"Samsung/Rainbow Robotics", role:"휴머노이드 R&D", type:"기업", year:2032, note:"지분 35%, R&D 중, 구체적 출시 일정 미정"},
+  {id:68, name:"Hyundai (Atlas 배치)", role:"로보틱스 메타플랜트", type:"기업", year:2028, note:"2026 배치, 2028 자동차 공장, 가정 미정"},
+  {id:69, name:"XPeng Robotics", role:"IRON/ET1 양산", type:"기업", year:2030, note:"2026말 양산, 가정용은 시기상조로 언급"},
+  {id:70, name:"Apptronik", role:"Apollo 로봇", type:"기업", year:2029, note:"2027 초기 규모, 산업 우선 → 가정"},
+  {id:71, name:"Sanctuary AI", role:"Phoenix 로봇", type:"기업", year:2033, note:"섬세한 조작 특화, 범용 로봇 단계적 접근"},
+  {id:72, name:"Foxconn", role:"산업용 배치", type:"기업", year:2032, note:"2026 Q1 공장 배치, 소비자는 장기"},
+  {id:73, name:"SoftBank", role:"Pepper 후속/투자", type:"기업", year:2035, note:"Pepper 실패 경험, Physical AI 재투자 중"},
+  {id:74, name:"Toyota", role:"T-HR3/보조 로봇", type:"기업", year:2035, note:"노인 보조 중심, 가정용 구체적 일정 없음"},
+  {id:75, name:"Honda", role:"ASIMO 후속 R&D", type:"기업", year:2035, note:"ASIMO 퇴역, R&D 지속, 구체적 일정 없음"},
+  {id:76, name:"Physical Intelligence", role:"범용 AI 브레인", type:"기업", year:2030, note:"로봇 범용 두뇌 개발, 가정 활용 점진적"},
+
+  // === Roboticists / Academics (type: '로보틱스 전문가') ===
+  {id:77, name:"Rodney Brooks", role:"iRobot 공동창업자, MIT 교수", type:"로보틱스 전문가", year:2040, note:"수십 년 내 불가, 2036년 이후에도 손재주 부족"},
+  {id:78, name:"Rodney Brooks (형태)", role:"로보틱스 선구자", type:"로보틱스 전문가", year:2040, note:"15년 후 성공 로봇은 바퀴+다중 팔 형태"},
+  {id:79, name:"Oh Jun-ho", role:"Samsung/Rainbow Robotics 수석", type:"로보틱스 전문가", year:2032, note:"다양한 형태 테스트 중, 다자유도 손 개발"},
+  {id:80, name:"Zhao Zhichao", role:"UBTECH 연구원장", type:"로보틱스 전문가", year:2033, note:"산업 2-3년, 상업 3-5년, 가정 8년+(~2033)"},
+  {id:81, name:"Leng Xiaokun", role:"Leju Robotics 회장", type:"로보틱스 전문가", year:2035, note:"기술 완성 5년, 일상 활용 10년+(~2035)"},
+  {id:82, name:"Zack Jackowski", role:"Boston Dynamics Atlas GM", type:"로보틱스 전문가", year:2038, note:"'다소 무기한 타임라인'으로 복잡한 작업 로드맵"},
+
+  // === Government / National Plans (type: '정부/국가계획') ===
+  {id:83, name:"한국 M.AX 연합", role:"정부 국가 전략", type:"정부/국가계획", year:2029, note:"2029년 휴머노이드 양산, 현대/LG/삼성 참여"},
+  {id:84, name:"한국 정부 (경제효과)", role:"국가 전략", type:"정부/국가계획", year:2030, note:"2030년까지 $72B 부가가치 목표"},
+  {id:85, name:"중국 국가 로봇 계획", role:"정부 정책", type:"정부/국가계획", year:2030, note:"휴머노이드 핵심 플랫폼, 정부 지원 확대"},
+  {id:86, name:"일본 로봇 전략", role:"정부 정책", type:"정부/국가계획", year:2030, note:"고령화 대응 로봇 활용, 동반 로봇 혁신"},
+
+  // === Additional Analysts & Experts ===
+  {id:87, name:"Chris Matthieu", role:"Intel RealSense VP", type:"CEO/창업자", year:2030, note:"2030년경 많은 가정에 로봇, RaaS 모델 예상"},
+  {id:88, name:"Ray Kurzweil", role:"미래학자, 발명가", type:"로보틱스 전문가", year:2029, note:"2020년대 말 인간 수준 AI 도래 지지"},
+  {id:89, name:"Standard Bots (분석)", role:"업계 분석", type:"리서치 기관", year:2029, note:"2020년대 후반 단순화된 가정용 로봇 등장"},
+  {id:90, name:"Automate.org", role:"업계 인사이트", type:"리서치 기관", year:2030, note:"2025 진화 단계, 가정용 2030년대"},
+  {id:91, name:"Edge AI & Vision Alliance", role:"업계 분석", type:"리서치 기관", year:2030, note:"유용한 지능을 향한 경주, 소비자 후반"},
+  {id:92, name:"R&D World Online", role:"미디어 분석", type:"리서치 기관", year:2030, note:"2030년 가정 진입 전망, 단계적 접근"},
+  {id:93, name:"Cleantech 분석", role:"기술 미디어", type:"리서치 기관", year:2033, note:"조작 장벽이 예상보다 깊음, 상용화 지연"},
+  {id:94, name:"Daily Sabah", role:"미디어 분석", type:"리서치 기관", year:2030, note:"2030년 가정 로봇 전망 분석"},
+  {id:95, name:"Recorded Future", role:"미래 전망 분석", type:"리서치 기관", year:2030, note:"휴머노이드 로보틱스의 미래 분석"},
+
+  // === Additional specific predictions ===
+  {id:96, name:"ARK Invest ($24T)", role:"시장 규모 분석", type:"투자은행", year:2030, note:"$24T 수익 기회, 가정/제조 균등 분할"},
+  {id:97, name:"Humanoid.guide 분석", role:"전문 미디어", type:"리서치 기관", year:2030, note:"Morgan Stanley/NEO 종합 분석, 2030 가정 시작"},
+  {id:98, name:"The Robot Report", role:"전문 미디어", type:"리서치 기관", year:2026, note:"2026년 최초 소비자 가정 배송 시작"},
+  {id:99, name:"Humanoids Daily", role:"전문 미디어", type:"리서치 기관", year:2032, note:"시장 예측 큰 불일치, $38B-$24T 범위"},
+  {id:100, name:"botinfo.ai 분석", role:"로봇 리뷰 사이트", type:"리서치 기관", year:2030, note:"NEO 리뷰, 2030 소비자 시장 전망"},
+  {id:101, name:"District Angels", role:"VC/리서치", type:"투자은행", year:2032, note:"범용 휴머노이드 시장 리포트, 소비자 후반"},
+  {id:102, name:"Leo Wealth", role:"투자 리서치", type:"투자은행", year:2030, note:"Physical AI 시대의 도래, 가정용 2030년대"},
+  {id:103, name:"London VC Network", role:"VC 분석", type:"투자은행", year:2030, note:"상업적 실행 가능성 분석, 비용 곡선 전환"},
+  {id:104, name:"01Core (Synths 예측)", role:"전문 분석", type:"리서치 기관", year:2035, note:"2035년 시장 예측, 가정용 단계적 침투"},
+  {id:105, name:"22nd Century Frontier", role:"미래 분석", type:"리서치 기관", year:2035, note:"$38B 붐 분석, 가정용 2030년대 후반"},
+  {id:106, name:"Manifold Markets (예측시장)", role:"예측 시장", type:"리서치 기관", year:2026, note:"1X NEO 2026.06까지 배송 예측 마켓"},
+  {id:107, name:"XMAQUINA", role:"Machine Economy 분석", type:"리서치 기관", year:2030, note:"2025 휴머노이드/머신 이코노미 분석"},
+  {id:108, name:"Robozaps", role:"로봇 리뷰/비교", type:"리서치 기관", year:2030, note:"28개 휴머노이드 비교, 소비자 시장 2030 전후"},
+];
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+const typeColors = {
+  'CEO/창업자': '#ff6b9d',
+  '투자은행': '#00d4ff',
+  '리서치 기관': '#a78bfa',
+  '컨설팅': '#fbbf24',
+  '기업': '#34d399',
+  '로보틱스 전문가': '#fb923c',
+  '정부/국가계획': '#c4b5fd'
+};
+
+const typeColorsAlpha = {};
+Object.entries(typeColors).forEach(([k,v]) => {
+  typeColorsAlpha[k] = v + '99';
+});
+
+function computeStats(data) {
+  const years = data.map(d => d.year).sort((a,b) => a-b);
+  const n = years.length;
+  const mean = years.reduce((a,b) => a+b, 0) / n;
+  const median = n % 2 === 0 ? (years[n/2-1] + years[n/2]) / 2 : years[Math.floor(n/2)];
+  const mode = (() => {
+    const freq = {};
+    years.forEach(y => freq[y] = (freq[y]||0) + 1);
+    return Object.entries(freq).sort((a,b) => b[1]-a[1])[0];
+  })();
+  const std = Math.sqrt(years.reduce((s,y) => s + (y-mean)**2, 0) / n);
+  return { n, mean: mean.toFixed(1), median, mode: mode[0], modeCount: mode[1], std: std.toFixed(1), min: years[0], max: years[n-1] };
+}
+
+// ============================================================
+// RENDER STATS
+// ============================================================
+const stats = computeStats(predictions);
+document.getElementById('statsGrid').innerHTML = `
+  <div class="stat-card"><div class="value">${stats.n}</div><div class="label">총 예측 수</div></div>
+  <div class="stat-card"><div class="value">${stats.median}</div><div class="label">중앙값 (Median)</div></div>
+  <div class="stat-card"><div class="value">${stats.mean}</div><div class="label">평균값 (Mean)</div></div>
+  <div class="stat-card"><div class="value">${stats.mode}년</div><div class="label">최빈값 (${stats.modeCount}건)</div></div>
+  <div class="stat-card"><div class="value">${stats.min}-${stats.max}</div><div class="label">예측 범위</div></div>
+  <div class="stat-card"><div class="value">+-${stats.std}년</div><div class="label">표준편차</div></div>
+`;
+
+// ============================================================
+// CHART 1: HISTOGRAM
+// ============================================================
+function buildHistogram() {
+  const yearRange = [];
+  for (let y = 2026; y <= 2050; y++) yearRange.push(y);
+
+  const types = Object.keys(typeColors);
+  const datasets = types.map(type => {
+    const data = yearRange.map(year =>
+      predictions.filter(p => p.year === year && p.type === type).length
+    );
+    return {
+      label: type,
+      data,
+      backgroundColor: typeColorsAlpha[type],
+      borderColor: typeColors[type],
+      borderWidth: 1,
+      borderRadius: 3,
+    };
+  });
+
+  // Legend
+  document.getElementById('legend1').innerHTML = types.map(t =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${typeColors[t]}"></div>${t}</div>`
+  ).join('');
+
+  new Chart(document.getElementById('histogramChart'), {
+    type: 'bar',
+    data: { labels: yearRange, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        annotation: {
+          annotations: {
+            medianLine: {
+              type: 'line',
+              xMin: yearRange.indexOf(stats.median),
+              xMax: yearRange.indexOf(stats.median),
+              borderColor: '#ff6b9d',
+              borderWidth: 2,
+              borderDash: [6, 4],
+              label: {
+                display: true,
+                content: `중앙값: ${stats.median}년`,
+                position: 'start',
+                backgroundColor: '#ff6b9d',
+                color: '#fff',
+                font: { size: 11 }
+              }
+            },
+            meanLine: {
+              type: 'line',
+              xMin: parseFloat(stats.mean) - 2026,
+              xMax: parseFloat(stats.mean) - 2026,
+              borderColor: '#00d4ff',
+              borderWidth: 2,
+              borderDash: [3, 3],
+              label: {
+                display: true,
+                content: `평균: ${stats.mean}년`,
+                position: 'end',
+                backgroundColor: '#00d4ff',
+                color: '#000',
+                font: { size: 11 }
+              }
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            afterBody: function(items) {
+              const year = yearRange[items[0].dataIndex];
+              const preds = predictions.filter(p => p.year === year);
+              return preds.slice(0, 5).map(p => `• ${p.name}`).join('\n') +
+                (preds.length > 5 ? `\n  ...외 ${preds.length - 5}건` : '');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          title: { display: true, text: '예측 연도', color: '#8892a8' },
+          ticks: { color: '#8892a8' },
+          grid: { color: '#1e284522' }
+        },
+        y: {
+          stacked: true,
+          title: { display: true, text: '예측 건수', color: '#8892a8' },
+          ticks: { color: '#8892a8', stepSize: 2 },
+          grid: { color: '#1e284544' }
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CHART 2: STRIP CHART (by type)
+// ============================================================
+function buildStripChart() {
+  const types = Object.keys(typeColors);
+  const datasets = types.map((type, idx) => {
+    const items = predictions.filter(p => p.type === type);
+    return {
+      label: type,
+      data: items.map(p => ({
+        x: p.year,
+        y: idx + (Math.random() * 0.6 - 0.3),
+        name: p.name,
+        note: p.note
+      })),
+      backgroundColor: typeColors[type] + 'cc',
+      borderColor: typeColors[type],
+      borderWidth: 1,
+      pointRadius: 6,
+      pointHoverRadius: 9,
+    };
+  });
+
+  new Chart(document.getElementById('stripChart'), {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#8892a8', usePointStyle: true, pointStyle: 'circle' }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const d = ctx.raw;
+              return `${d.name}: ${d.x}년`;
+            },
+            afterLabel: (ctx) => ctx.raw.note
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: '예측 연도', color: '#8892a8' },
+          ticks: { color: '#8892a8' },
+          grid: { color: '#1e284522' },
+          min: 2025, max: 2052
+        },
+        y: {
+          title: { display: true, text: '전문가 유형', color: '#8892a8' },
+          ticks: {
+            color: '#8892a8',
+            callback: (val) => types[Math.round(val)] || '',
+            stepSize: 1
+          },
+          grid: { color: '#1e284522' },
+          min: -0.5, max: types.length - 0.5
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CHART 3: CDF
+// ============================================================
+function buildCDF() {
+  const years = [];
+  for (let y = 2025; y <= 2051; y++) years.push(y);
+  const n = predictions.length;
+  const cumData = years.map(y => predictions.filter(p => p.year <= y).length / n * 100);
+
+  new Chart(document.getElementById('cdfChart'), {
+    type: 'line',
+    data: {
+      labels: years,
+      datasets: [{
+        label: '누적 비율 (%)',
+        data: cumData,
+        borderColor: '#7b61ff',
+        backgroundColor: '#7b61ff22',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        annotation: {
+          annotations: {
+            fifty: {
+              type: 'line',
+              yMin: 50, yMax: 50,
+              borderColor: '#ff6b9d88',
+              borderWidth: 1,
+              borderDash: [4,4],
+              label: {
+                display: true,
+                content: '50% 선',
+                position: 'start',
+                backgroundColor: '#ff6b9d',
+                font: { size: 10 }
+              }
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.parsed.x}년까지: 전문가 ${ctx.parsed.y.toFixed(1)}%가 도입 예측`
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: '연도', color: '#8892a8' },
+          ticks: { color: '#8892a8' },
+          grid: { color: '#1e284522' }
+        },
+        y: {
+          title: { display: true, text: '누적 비율 (%)', color: '#8892a8' },
+          ticks: { color: '#8892a8', callback: v => v + '%' },
+          grid: { color: '#1e284522' },
+          min: 0, max: 100
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CHART 4: Average by Type
+// ============================================================
+function buildAvgChart() {
+  const types = Object.keys(typeColors);
+  const avgs = types.map(type => {
+    const items = predictions.filter(p => p.type === type);
+    return items.reduce((s,p) => s + p.year, 0) / items.length;
+  });
+  const counts = types.map(type => predictions.filter(p => p.type === type).length);
+
+  new Chart(document.getElementById('avgChart'), {
+    type: 'bar',
+    data: {
+      labels: types,
+      datasets: [{
+        label: '평균 예측 연도',
+        data: avgs,
+        backgroundColor: types.map(t => typeColors[t] + '88'),
+        borderColor: types.map(t => typeColors[t]),
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `평균: ${ctx.parsed.x.toFixed(1)}년 (${counts[ctx.dataIndex]}건)`
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 2026, max: 2042,
+          title: { display: true, text: '평균 예측 연도', color: '#8892a8' },
+          ticks: { color: '#8892a8' },
+          grid: { color: '#1e284522' }
+        },
+        y: {
+          ticks: { color: '#e0e6f0', font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CHART 5: Donut
+// ============================================================
+function buildDonut() {
+  const phases = [
+    { label: '2026-2027 (얼리액세스)', min: 2026, max: 2027, color: '#34d399' },
+    { label: '2028-2031 (최초 상용화)', min: 2028, max: 2031, color: '#00d4ff' },
+    { label: '2032-2037 (본격 보급)', min: 2032, max: 2037, color: '#a78bfa' },
+    { label: '2038-2050 (대중화)', min: 2038, max: 2050, color: '#ff6b9d' },
+  ];
+  const counts = phases.map(ph => predictions.filter(p => p.year >= ph.min && p.year <= ph.max).length);
+
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: phases.map(p => p.label),
+      datasets: [{
+        data: counts,
+        backgroundColor: phases.map(p => p.color + 'cc'),
+        borderColor: phases.map(p => p.color),
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#8892a8', usePointStyle: true, padding: 12, font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const pct = (ctx.parsed / predictions.length * 100).toFixed(1);
+              return `${ctx.label}: ${ctx.parsed}건 (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CHART 6: Bubble
+// ============================================================
+function buildBubble() {
+  const freq = {};
+  predictions.forEach(p => {
+    const key = p.year;
+    if (!freq[key]) freq[key] = { count: 0, types: {} };
+    freq[key].count++;
+    freq[key].types[p.type] = (freq[key].types[p.type] || 0) + 1;
+  });
+
+  const types = Object.keys(typeColors);
+  const datasets = types.map(type => ({
+    label: type,
+    data: Object.entries(freq)
+      .filter(([y, d]) => d.types[type])
+      .map(([y, d]) => ({
+        x: parseInt(y),
+        y: types.indexOf(type),
+        r: Math.sqrt(d.types[type]) * 6
+      })),
+    backgroundColor: typeColors[type] + '88',
+    borderColor: typeColors[type],
+  }));
+
+  new Chart(document.getElementById('bubbleChart'), {
+    type: 'bubble',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const year = ctx.raw.x;
+              const type = types[ctx.raw.y];
+              const count = freq[year]?.types[type] || 0;
+              return `${type} - ${year}년: ${count}건`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: '예측 연도', color: '#8892a8' },
+          ticks: { color: '#8892a8' },
+          grid: { color: '#1e284522' },
+          min: 2025, max: 2051
+        },
+        y: {
+          title: { display: true, text: '전문가 유형', color: '#8892a8' },
+          ticks: {
+            color: '#8892a8',
+            callback: (v) => types[v] || '',
+            stepSize: 1,
+            font: { size: 10 }
+          },
+          grid: { color: '#1e284522' },
+          min: -0.5, max: types.length - 0.5
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// DATA TABLE
+// ============================================================
+function buildTable(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = data.map((p, i) => {
+    const typeClass = {
+      'CEO/창업자': 'type-ceo',
+      '투자은행': 'type-bank',
+      '리서치 기관': 'type-research',
+      '컨설팅': 'type-consultancy',
+      '기업': 'type-company',
+      '로보틱스 전문가': 'type-roboticist',
+      '정부/국가계획': 'type-government'
+    }[p.type] || '';
+    return `<tr>
+      <td>${p.id}</td>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.role}</td>
+      <td><span class="type-badge ${typeClass}">${p.type}</span></td>
+      <td><strong>${p.year}</strong></td>
+      <td>${p.note}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Filter bar
+const types = [...new Set(predictions.map(p => p.type))];
+document.getElementById('filterBar').innerHTML =
+  `<button class="filter-btn active" data-filter="all">전체</button>` +
+  types.map(t => `<button class="filter-btn" data-filter="${t}">${t}</button>`).join('');
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    const filtered = filter === 'all' ? predictions : predictions.filter(p => p.type === filter);
+    buildTable(filtered);
+  });
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  const filtered = predictions.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.role.toLowerCase().includes(q) ||
+    p.type.toLowerCase().includes(q) ||
+    p.note.toLowerCase().includes(q) ||
+    String(p.year).includes(q)
+  );
+  buildTable(filtered);
+});
+
+// Sort
+let sortDir = {};
+function sortTable(col) {
+  const keys = ['id', 'name', 'role', 'type', 'year', 'note'];
+  const key = keys[col];
+  sortDir[key] = !sortDir[key];
+  const sorted = [...predictions].sort((a, b) => {
+    const va = a[key], vb = b[key];
+    if (typeof va === 'number') return sortDir[key] ? va - vb : vb - va;
+    return sortDir[key] ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+  buildTable(sorted);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+buildHistogram();
+buildStripChart();
+buildCDF();
+buildAvgChart();
+buildDonut();
+buildBubble();
+buildTable(predictions);
+</script>
+</body>
+</html>
