@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상하이 로보틱스 & AI 방문지 가이드</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%);
+            border-bottom: 2px solid #00d4ff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2em;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        .header p {
+            color: #8899aa;
+            font-size: 1em;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #map {
+            width: 100%;
+            height: 550px;
+            border-radius: 12px;
+            border: 2px solid #1a2a3a;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        .section {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .section h2 {
+            color: #00d4ff;
+            font-size: 1.4em;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .section h3 {
+            color: #60a5fa;
+            font-size: 1.15em;
+            margin: 16px 0 8px 0;
+        }
+        .section p, .section li {
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        .section ul {
+            padding-left: 20px;
+        }
+        .section a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+        .section a:hover {
+            text-decoration: underline;
+            color: #7dd3fc;
+        }
+        .highlight {
+            background: #1e293b;
+            border-left: 3px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            color: #fbbf24;
+            font-size: 0.95em;
+        }
+        .tag {
+            display: inline-block;
+            background: #1e3a5f;
+            color: #60a5fa;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px 4px 2px 0;
+        }
+        .tag.event { background: #3b1f4b; color: #c084fc; }
+        .tag.tip { background: #1a3a2a; color: #4ade80; }
+        /* Hours table */
+        .hours-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .hours-table thead th {
+            background: #1e293b;
+            color: #00d4ff;
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            border-bottom: 2px solid #334155;
+        }
+        .hours-table tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.9em;
+            vertical-align: top;
+        }
+        .hours-table tbody tr { background: #0f172a; }
+        .hours-table tbody tr:nth-child(even) { background: #111827; }
+        .hours-table tbody tr:hover { background: #1a2744; }
+        .hours-table .venue-name { color: #60a5fa; font-weight: 600; }
+        .hours-table .hours { color: #4ade80; font-weight: 500; }
+        .hours-table .note { color: #f59e0b; font-size: 0.85em; }
+        .hours-table .closed { color: #ef4444; }
+        /* Venue cards */
+        .venue-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .venue-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 18px;
+            transition: border-color 0.2s;
+        }
+        .venue-card:hover { border-color: #334155; }
+        .venue-card h4 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+        .venue-card .addr {
+            color: #94a3b8;
+            font-size: 0.88em;
+            margin-bottom: 6px;
+        }
+        .venue-card .desc {
+            color: #cbd5e1;
+            font-size: 0.92em;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 12px 0;
+            font-size: 0.9em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.4em; }
+            #map { height: 400px; }
+            .venue-grid { grid-template-columns: 1fr; }
+            .hours-table { font-size: 0.85em; }
+            .hours-table thead th, .hours-table tbody td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Shanghai Robotics & AI Venues Guide</h1>
+    <p>상하이 로보틱스 / AI / 스마트홈 방문지 가이드 맵</p>
+</div>
+
+<div class="container">
+
+    <!-- Map -->
+    <div id="map"></div>
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#e74c3c;"></div> 전시장 (Expo)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2ecc71;"></div> 브랜드 스토어 (Store)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div> 박물관/체험관 (Museum)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f39c12;"></div> 추천 방문지 (Recommended)</div>
+    </div>
+
+    <!-- Business Hours Table -->
+    <div class="section">
+        <h2>영업시간 / Business Hours</h2>
+        <table class="hours-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>장소 (Venue)</th>
+                    <th>주소 (Address)</th>
+                    <th>영업시간 (Hours)</th>
+                    <th>비고 (Notes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="venue-name">SNIEC<br>上海新国际博览中心</td>
+                    <td>No. 2345 Longyang Road, Pudong<br>浦东新区龙阳路2345号</td>
+                    <td class="hours">전시 기간에 따라 상이<br>(통상 09:00 - 17:30)</td>
+                    <td class="note">전시 없을 때는 비공개<br>지하철 2/7호선 龙阳路역</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="venue-name">Eastern Hub IBCZ<br>东方枢纽国际商务合作区</td>
+                    <td>No. 88 Taohuayuan Road<br>桃花源路88号</td>
+                    <td class="hours">전시 기간에 따라 상이<br>(통상 09:00 - 17:00)</td>
+                    <td class="note">AWE 2026: 3/12-15 개최 예정<br>푸동공항 인근 신설 전시구역</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td class="venue-name">Huawei Flagship Store<br>华为旗舰店</td>
+                    <td>282 Huaihai Middle Road, Huangpu<br>黄浦区淮海中路282号</td>
+                    <td class="hours">10:00 - 22:00<br>(매일)</td>
+                    <td class="note">화웨이 공식 플래그십<br>지하철 1호선 黄陂南路역</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td class="venue-name">Xiaomi Home<br>小米之家 (东方明珠店)</td>
+                    <td>No. 1 Century Ave, Pudong<br>浦东新区世纪大道1号 东方明珠 1F</td>
+                    <td class="hours">09:30 - 22:00<br>(매일)</td>
+                    <td class="note">동방명주탑 1층 내 위치<br>Tel: 021-50206266</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td class="venue-name">Global Harbor (环球港)<br>AI Robot Zone</td>
+                    <td>No. 3300 Zhongshan North Rd, Putuo<br>普陀区中山北路3300号</td>
+                    <td class="hours">10:00 - 22:00<br>(매일)</td>
+                    <td class="note">VR 테마파크 & 체험형 AI존<br>지하철 3/4/13호선 金沙江路역</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td class="venue-name">Shanghai Science & Technology Museum<br>上海科技馆</td>
+                    <td>2000 Century Ave, Pudong<br>浦东新区世纪大道2000号</td>
+                    <td class="hours">09:00 - 17:15<br>(화-일, 16:30 입장마감)</td>
+                    <td class="note closed">월요일 휴관<br>리노베이션 후 재개관 (2025말 예정)<br>입장료: 45위안</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td class="venue-name">NIO House (蔚来中心)<br>Shanghai Tower</td>
+                    <td>Shanghai Tower, No. 501 Yincheng Mid Rd, Pudong<br>浦东新区银城中路501号 上海中心大厦</td>
+                    <td class="hours">10:00 - 22:00<br>(매일)</td>
+                    <td class="note">상하이타워 1층<br>지하철 2/14호선 陆家嘴역</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 1: Zhangjiang Robot Valley -->
+    <div class="section">
+        <h2>1. 张江机器人谷 (Zhangjiang Robot Valley) 견학/전시관 관람</h2>
+
+        <h3>미래 체험관 (Future Experience Hall)</h3>
+        <ul>
+            <li><strong>주소:</strong> 浦东新区秀浦路2388号 12号展厅 (No. 2388 Xiupu Road, Hall 12, Pudong)</li>
+            <li><strong>규모:</strong> 1,000m2, 2021년 7월 개관</li>
+            <li><strong>전시 내용:</strong> 배달 로봇, 듀얼암 커피 로봇, 중국 최초 국산 복강경 수술 로봇, 루빅큐브 해결 로봇, 뇌-컴퓨터 인터페이스 드론 등</li>
+            <li><strong>체험:</strong> 택배 로봇, 커피 제조 로봇, 초상화 로봇 등 직접 체험 가능</li>
+        </ul>
+        <div class="highlight">참관 방법: 사전 예약 필수 (提前预约). 위챗 공식 계정 또는 전화로 예약 가능. 대규모 행사 시 일정이 변경될 수 있음.</div>
+
+        <h3>주요 연례 행사를 통한 방문 (추천)</h3>
+        <ul>
+            <li><span class="tag event">WAIC</span> <strong>세계인공지능대회 (7월):</strong> WAIC City Walk 프로그램에서 장장 로봇밸리가 핵심 코스로 포함됨. 128개 AI 체험 장소 연결.</li>
+            <li><span class="tag event">Inclusion Conference</span> <strong>외탄대회 (9월):</strong> 장장 로봇밸리와 협력하여 "Robot Town" 운영, 100대 이상 로봇 전시 (AgiBot, Kepler 등).</li>
+            <li><span class="tag event">CIIE</span> <strong>중국국제수입박람회 (11월):</strong> NECC에서 개최, 로봇 & AI 관련 전시 다수.</li>
+        </ul>
+
+        <h3>2026년 예정 전시회</h3>
+        <ul>
+            <li><strong>HRTE 2026</strong> - 상하이 국제 휴머노이드 로봇 & 로봇산업체인 전시회 (SNIEC)</li>
+            <li><strong>China Industry Fair - Robot Show 2026</strong> - 2026.10.12-16, NECC 개최</li>
+            <li><strong>AWE 2026</strong> - 2026.3.12-15, SNIEC + Eastern Hub IBCZ (화웨이, 샤오미, Agibot, Unitree 등 1,200+ 브랜드 참가)</li>
+        </ul>
+    </div>
+
+    <!-- Section 2: Agibot -->
+    <div class="section">
+        <h2>2. Agibot (智元机器人) 쇼룸/공장 투어</h2>
+
+        <h3>회사 개요</h3>
+        <ul>
+            <li><strong>설립:</strong> 2023년, 전 화웨이 엔지니어 Deng Taihua, Peng Zhihui 공동 창업</li>
+            <li><strong>공장 위치:</strong> 上海 临港奉贤 (Lingang Fengxian) 지역</li>
+            <li><strong>생산 실적:</strong> 2024년 12월 1,000대 생산 돌파, 2025년 말 5,000대+ 납품</li>
+            <li><strong>데이터 수집 시설:</strong> 4,000m2 규모, 100대 로봇이 상시 실제/시뮬레이션 데이터 수집 (세탁, 요리, 장보기 등)</li>
+        </ul>
+
+        <div class="highlight">
+            공개 투어 프로그램 없음: 현재 Agibot은 일반인 대상 공개 쇼룸이나 공장 투어를 운영하지 않습니다. 언론사 및 정부 초청 방문만 확인됨.
+        </div>
+
+        <h3>대안: Agibot 로봇을 직접 볼 수 있는 방법</h3>
+        <ul>
+            <li><span class="tag event">WAIC 2026 (7월)</span> Agibot이 매년 주요 전시 참가 - 2025년엔 Pepsi 브랜드 음료 서빙 로봇 시연</li>
+            <li><span class="tag event">AWE 2026 (3월)</span> Agibot 확정 참가사 - SNIEC + IBCZ에서 전시</li>
+            <li><span class="tag event">Inclusion Conference (9월)</span> Robot Town에서 Agibot 휴머노이드 로봇 전시</li>
+            <li><span class="tag tip">비즈니스 문의</span> 공식 사이트 <a href="https://www.agibot.com/" target="_blank">agibot.com</a>에서 비즈니스 협업/방문 문의 가능</li>
+        </ul>
+    </div>
+
+    <!-- Section 3: Recommended Venues -->
+    <div class="section">
+        <h2>3. 추천 방문지: 가정용 로봇 / 스마트홈 / AI</h2>
+
+        <div class="venue-grid">
+            <div class="venue-card">
+                <h4>Zhangjiang Robot Valley Future Experience Hall</h4>
+                <div class="addr">浦东新区秀浦路2388号 12号展厅</div>
+                <div class="desc">1,000m2 규모의 미래 체험관. 수술 로봇, 딥씨 소프트로봇, 뇌-컴퓨터 인터페이스 등 최첨단 로봇 체험. <strong>사전 예약 필수.</strong></div>
+            </div>
+            <div class="venue-card">
+                <h4>Shanghai Science & Technology Museum (리뉴얼 후)</h4>
+                <div class="addr">浦东新区世纪大道2000号</div>
+                <div class="desc">20년 만의 대규모 리노베이션 진행 중. 재개관 시 AI/로봇 전시관 대폭 강화 예정. 기존에도 로봇 & 정보기술 전시 구역 인기.</div>
+            </div>
+            <div class="venue-card">
+                <h4>Huawei Flagship Store</h4>
+                <div class="addr">黄浦区淮海中路282号 (+ 南京东路233号 글로벌 최대 매장)</div>
+                <div class="desc">HarmonyOS 스마트홈 생태계 체험 (전등, 스피커, 태블릿, TV 연동). Mate/Pura 시리즈 AI 기능 체험. 남경동로점은 전 세계 최대 규모.</div>
+            </div>
+            <div class="venue-card">
+                <h4>Xiaomi Home (Oriental Pearl Tower)</h4>
+                <div class="addr">浦东新区世纪大道1号 东方明珠 1F</div>
+                <div class="desc">중국 유일 랜드마크 관광지 내 샤오미 스토어. 로봇청소기, IoT 스마트홈 기기, CyberDog 시리즈 등 체험 가능.</div>
+            </div>
+            <div class="venue-card">
+                <h4>Global Harbor (环球港) - AI Robot Zone</h4>
+                <div class="addr">普陀区中山北路3300号</div>
+                <div class="desc">VR 테마파크, 체험형 AI 로봇 구역 보유. 쇼핑몰 내 다양한 체험 콘텐츠. 4층 전시공간에서 문화/기술 전시 상시 운영.</div>
+            </div>
+            <div class="venue-card">
+                <h4>NIO House - Shanghai Tower</h4>
+                <div class="addr">浦东新区银城中路501号 上海中心大厦</div>
+                <div class="desc">자율주행 EV 브랜드 NIO의 플래그십 라운지. 배터리 스왑 기술, NOMI AI 어시스턴트, 자율주행 체험 전시. 비회원도 방문 가능.</div>
+            </div>
+            <div class="venue-card">
+                <h4>DJI Shanghai Flagship Store</h4>
+                <div class="addr">黄浦区南京东路353号 (Nanjing East Rd)</div>
+                <div class="desc">드론 비행 시뮬레이션, RoboMaster 교육용 로봇, 짐벌 등 체험 가능. AI 기반 드론 기술 최신 제품 라인업 전시.</div>
+            </div>
+            <div class="venue-card">
+                <h4>WAIC City Walk Route (7월 연례)</h4>
+                <div class="addr">상하이 시내 128개 AI 체험 장소</div>
+                <div class="desc">매년 7월 개최. AI 로봇, 자율주행차, eVTOL, 스마트 단말기 등 도시 곳곳에서 체험. 장장 로봇밸리, ShanghaiTech 연구실, 루자쭈이 등 코스 포함.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Tips -->
+    <div class="section">
+        <h2>4. 방문 팁</h2>
+        <ul>
+            <li><strong>교통:</strong> 상하이 지하철이 주요 장소 대부분을 커버. 2호선이 핵심 (SNIEC, 과학기술관, 루자쭈이 모두 연결)</li>
+            <li><strong>결제:</strong> WeChat Pay / Alipay 필수 (대부분 현금 불가). 외국인은 Alipay Tour Pass 또는 WeChat 외국카드 연동 권장</li>
+            <li><strong>언어:</strong> 전시장은 대부분 중영 병기. 소매 매장 직원은 기본 영어 가능</li>
+            <li><strong>예약:</strong> 장장 로봇밸리 체험관, 과학기술관 등은 위챗 공식 계정에서 사전 예약 필수</li>
+            <li><strong>Best Season:</strong> 7월 WAIC, 9월 Inclusion Conference, 11월 CIIE 시기에 방문하면 가장 많은 행사를 경험할 수 있음</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+    // Initialize map centered on Shanghai
+    const map = L.map('map', {
+        center: [31.225, 121.55],
+        zoom: 11,
+        zoomControl: true
+    });
+
+    // Dark-themed tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 18
+    }).addTo(map);
+
+    // Custom icon factory
+    function makeIcon(color) {
+        return L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                width: 28px; height: 28px;
+                background: ${color};
+                border: 3px solid #fff;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 12px ${color}66;
+            "></div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -16]
+        });
+    }
+
+    const expoIcon = makeIcon('#e74c3c');
+    const storeIcon = makeIcon('#2ecc71');
+    const museumIcon = makeIcon('#9b59b6');
+    const recIcon = makeIcon('#f39c12');
+
+    // === 7 Main locations ===
+    const venues = [
+        {
+            name: '1. SNIEC (上海新国际博览中心)',
+            lat: 31.2050, lng: 121.6170,
+            icon: expoIcon,
+            desc: `<b>SNIEC - 상하이신국제박람중심</b><br>
+                   <i>No. 2345 Longyang Rd, Pudong</i><br>
+                   영업: 전시 기간에 따라 상이 (통상 09:00-17:30)<br>
+                   지하철: 2/7호선 龙阳路역<br>
+                   <small>HRTE 2026, AWE 2026 등 주요 로봇 전시 개최지</small>`
+        },
+        {
+            name: '2. Eastern Hub IBCZ',
+            lat: 31.155, lng: 121.790,
+            icon: expoIcon,
+            desc: `<b>Eastern Hub IBCZ (东方枢纽国际商务合作区)</b><br>
+                   <i>No. 88 Taohuayuan Rd</i><br>
+                   영업: 전시 기간에 따라 상이 (통상 09:00-17:00)<br>
+                   <small>AWE 2026 (3/12-15) 공동 개최 - 17만m2 규모</small>`
+        },
+        {
+            name: '3. Huawei Flagship (淮海中路)',
+            lat: 31.2270, lng: 121.4735,
+            icon: storeIcon,
+            desc: `<b>Huawei Flagship Store (华为旗舰店)</b><br>
+                   <i>282 Huaihai Middle Rd, Huangpu</i><br>
+                   영업: 10:00 - 22:00 (매일)<br>
+                   <small>HarmonyOS 스마트홈 생태계 체험</small>`
+        },
+        {
+            name: '4. Xiaomi Home (东方明珠)',
+            lat: 31.2397, lng: 121.4996,
+            icon: storeIcon,
+            desc: `<b>Xiaomi Home (小米之家 东方明珠店)</b><br>
+                   <i>No. 1 Century Ave, Pudong (Oriental Pearl 1F)</i><br>
+                   영업: 09:30 - 22:00 (매일)<br>
+                   Tel: 021-50206266<br>
+                   <small>중국 유일 랜드마크 내 샤오미 매장</small>`
+        },
+        {
+            name: '5. Global Harbor (环球港)',
+            lat: 31.2445, lng: 121.4120,
+            icon: museumIcon,
+            desc: `<b>Global Harbor - AI Robot Zone (环球港)</b><br>
+                   <i>No. 3300 Zhongshan North Rd, Putuo</i><br>
+                   영업: 10:00 - 22:00 (매일)<br>
+                   지하철: 3/4/13호선 金沙江路역<br>
+                   <small>VR 테마파크 & 체험형 AI존</small>`
+        },
+        {
+            name: '6. Science & Technology Museum',
+            lat: 31.2175, lng: 121.5355,
+            icon: museumIcon,
+            desc: `<b>Shanghai Science & Technology Museum (上海科技馆)</b><br>
+                   <i>2000 Century Ave, Pudong</i><br>
+                   영업: 09:00 - 17:15 (화~일, 월요일 휴관)<br>
+                   입장마감: 16:30 / 입장료: 45위안<br>
+                   <span style="color:#ef4444;">리노베이션 중 - 2025년 말 재개관 예정</span>`
+        },
+        {
+            name: '7. NIO House (Shanghai Tower)',
+            lat: 31.2355, lng: 121.5016,
+            icon: storeIcon,
+            desc: `<b>NIO House (蔚来中心) - Shanghai Tower</b><br>
+                   <i>Shanghai Tower, No. 501 Yincheng Mid Rd, Pudong</i><br>
+                   영업: 10:00 - 22:00 (매일)<br>
+                   지하철: 2/14호선 陆家嘴역<br>
+                   <small>자율주행 EV, NOMI AI 어시스턴트 체험</small>`
+        }
+    ];
+
+    // === Recommended locations ===
+    const recommended = [
+        {
+            name: 'Zhangjiang Robot Valley (张江机器人谷)',
+            lat: 31.1780, lng: 121.6120,
+            icon: recIcon,
+            desc: `<b>Zhangjiang Robot Valley Future Experience Hall</b><br>
+                   <i>浦东新区秀浦路2388号 12号展厅</i><br>
+                   영업: 사전 예약제<br>
+                   <small>1,000m2 미래 체험관 - 수술 로봇, 딥씨 로봇 등</small>`
+        },
+        {
+            name: 'DJI Shanghai Flagship',
+            lat: 31.2380, lng: 121.4800,
+            icon: recIcon,
+            desc: `<b>DJI Shanghai Flagship Store</b><br>
+                   <i>黄浦区南京东路353号</i><br>
+                   영업: 10:00 - 22:00<br>
+                   <small>드론 시뮬레이션, RoboMaster 교육 로봇 체험</small>`
+        }
+    ];
+
+    // Add markers
+    venues.forEach(v => {
+        L.marker([v.lat, v.lng], { icon: v.icon })
+            .addTo(map)
+            .bindPopup(v.desc, { maxWidth: 320 });
+    });
+
+    recommended.forEach(v => {
+        L.marker([v.lat, v.lng], { icon: v.icon })
+            .addTo(map)
+            .bindPopup(v.desc, { maxWidth: 320 });
+    });
+
+    // Fit bounds to show all markers
+    const allCoords = [...venues, ...recommended].map(v => [v.lat, v.lng]);
+    map.fitBounds(allCoords, { padding: [30, 30] });
+</script>
+
+</body>
+</html>
